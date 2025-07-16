@@ -1,0 +1,236 @@
+/* App.css */
+
+.playground {
+  width: 100vw;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: white;
+  overflow: hidden;
+}
+.join-room {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+.room-id{
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: #f88c8c;
+  color: black;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+.members-status{
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  /* background-color: #f88c8c; */
+  color: black;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.game-start{
+  position:absolute;
+  top: 10px;
+  right: 10px;
+  /* background-color: #f88c8c; */
+  color: black;
+  padding: 5px 10px;
+  border-radius: 5px;
+  font-weight: bold;
+}
+.waiting-room{
+  display: flex;
+  min-width:30vw ;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 40vh;
+  background-color: #f1f6bd;
+  color: #333;
+}
+
+.app {
+  font-family: sans-serif;
+  background-color: #aefcfb;
+  margin: 0;
+}
+
+.exit-room{
+  background-color: #f88c8c;
+  color: white;
+  padding: 5px 10px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 20px;
+}
+
+.header {
+  background: #f88c8c;
+  padding: 10px;
+  font-size: 24px;
+  font-weight: bold;
+  text-align: left;
+  color: #000;
+  display: flex;
+  justify-content: space-between;
+}
+
+.container {
+  display: flex;
+  height: calc(100% - 50px);
+}
+
+.sidebar {
+  width: 180px;
+  background: #e1e1e1;
+  padding: 5px;
+  overflow-y: scroll;
+
+}
+
+::-webkit-scrollbar{
+  width: 1px;
+}
+
+.player {
+  background: white;
+  color: black;
+  padding: 5px;
+  margin-bottom: 5px;
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  border-radius: 5px;
+  align-items: flex-start;
+}
+.player_info{
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.player_name{
+  font-weight: bold;
+}
+.game-area {
+  flex: 1;
+  background: #f1f6bd;
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-evenly;
+}
+
+.picked-box {
+  background-color: violet;
+  color: white;
+  font-size: 18px;
+  padding: 20px 30px;
+  border-radius: 6px;
+  text-align: center;
+  cursor: pointer;
+  
+}
+
+
+.picked-boxoutline{
+  border: 2px dotted #000000b8;
+  padding: 5px;
+  min-width: 100px;
+  min-height: 50px;
+  border-radius: 8px;
+  background-color: #f1f6bd;
+}
+
+.pass-button {
+  background-color: orange;
+  color: white;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 20px;
+  font-weight: bold;
+  margin-bottom: 10px;
+  cursor: pointer;
+}
+
+.timer {
+  font-size: 14px;
+  margin-bottom: 10px;
+  color: red;
+}
+
+.divider {
+  width: 100%;
+  border: 1px solid black;
+  margin: 10px 0;
+}
+
+.cheat-row {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.cheat-card {
+  background-color: #7e7ee7;
+  color: white;
+  padding: 15px 25px;
+  border-radius: 8px;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+
+.chat-section {
+  width: 240px;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  border-left: 4px solid #a85c5c;
+}
+
+.chat-header {
+  background: #a85c5c;
+  color: white;
+  font-weight: bold;
+  padding: 10px;
+  text-align: center;
+}
+
+.chat-box {
+  flex: 1;
+  padding: 10px;
+  overflow-y: auto;
+  font-size: 12px;
+}
+
+.chat-input {
+  border: none;
+  padding: 8px;
+  border-top: 1px solid #ccc;
+  font-size: 12px;
+}
+
+.join {
+  color: green;
+}
+
+.left {
+  color: red;
+}
+
+.guessed {
+  color: limegreen;
+  font-weight: bold;
+}
