@@ -3,7 +3,7 @@ name: Deploy Frontend to GitHub Pages
 on:
   push:
     branches:
-      - main  # ya 'master' if that's your default branch
+      - main
 
 jobs:
   deploy:
@@ -17,9 +17,6 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: 18
-
-      - name: Navigate to frontend
-        run: cd frontend
 
       - name: Install dependencies
         run: |
@@ -36,4 +33,3 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: frontend/dist
- 
