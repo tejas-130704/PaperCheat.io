@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useParams, useLocation } from "react-router-dom";
 import PlayGround from "./PlayGround";
+import { ToastContainer, toast } from 'react-toastify';
+import AlertDialogSlide from "./AlertDialogSlide";
+import WinnerCelebration from "./WinnerCelebration";
 
 export default function JoinRoom() {
     const { roomId } = useParams();
@@ -18,26 +21,51 @@ export default function JoinRoom() {
     const [totalMembers, setTotalMembers] = useState(0);
     const [winnerList, setWinnerList] = useState([]);
     const [yourId, setYourId] = useState(null);
+    const [isOpenDialog, setIsOpenDialog] = useState(false);
+    const [dialogMessage, setDialogMessage] = useState("");
     const [cheats, setCheats] = useState([]);
+    const [nxtAnonymousChat, setNxtAnonymousChat] = useState(false)
+    const [nxtHideCheat, setNxtHideCheat] = useState(false)
+    const [globalTotalRound, setGlobalTotalRound] = useState(1)
     const [pickCard, setPickCard] = useState(null);
+    const [winnerCelebrationWindow, setwinnerCelebrationWindow] = useState(false)
     const [activePlayerId, setActivePlayerId] = useState(null);
-
+    const [chatSectionChat, setChatSectionChat] = useState({
+        type: "",
+        username: "",
+        senderid: -1,
+        message: ""
+    })
     const [globalRound, setGlobalRound] = useState(0);
+
+    const notify = (message) => toast(`${message}`);
+
+    useEffect(() => {
+        setNxtAnonymousChat(details.state.anonymousChat)
+        setNxtHideCheat(details.state.hideCheat)
+        setGlobalTotalRound(details.state.numRounds)
+        console.log("Use Effect Join Room Nxt data:", details.state.anonymousChat, details.state.hideCheat, details.state.numRounds)
+    }, [])
 
     useEffect(() => {
         socketRef.current = new WebSocket('ws://localhost:3000');
 
         socketRef.current.addEventListener('open', () => {
-            console.log("Connected to server");
+
 
             const payload = {
                 roomId,
                 userName: details.state.name,
                 emoji: details.state.face,
                 type: details.state.type === "host" ? "room-create" : "room-join",
-                ...(details.state.type === "host" ? { memeberCount: details.state.totalMembers } : {})
+                ...(details.state.type === "host" ? {
+                    memeberCount: details.state.totalMembers,
+                    totalRounds: details.state.numRounds,
+                    nxtAnonymousChat: details.state.anonymousChat,
+                    nxtHideCheat: details.state.hideCheat,
+                } : {})
             };
-            console.log("Sending payload:", payload);
+
 
             // ✅ Double check before sending
             if (socketRef.current.readyState === WebSocket.OPEN) {
@@ -49,16 +77,18 @@ export default function JoinRoom() {
 
         socketRef.current.addEventListener("message", (event) => {
 
-            console.log("Message from server:", event.data);
+            // console.log("Message from server:", event.data);
             const data = JSON.parse(event.data);
+            console.log("Data from server:", data)
 
             if (data.isData === "room-created") {
-                console.log("Room created successfully:", data);
+
                 if (Array.isArray(data.players) && data.players.length > 0) {
                     data.players[0].me = 2; // host
                 }
                 setPlayers(data.players || []);
                 setRound(data.round || 1);
+                setYourId(1)
                 setIsGameStarted(data.isGameStarted || false);
                 setTotalMembers(data.totalMembers);
 
@@ -66,7 +96,13 @@ export default function JoinRoom() {
             }
             else if (data.isData === "warning") {
                 console.error("Warning :", data);
-                alert(data.error);
+                toast.warning(`${data.error}`, {
+                    position: "top-right",
+                    autoClose: 2000,
+                    style: {
+                        fontSize: "14px",
+                    }
+                });
                 setPlayers(data.players || []);
                 setRound(data.round || 1);
                 setIsGameStarted(data.isGameStarted || false);
@@ -74,12 +110,21 @@ export default function JoinRoom() {
                 setYourId(data.yourId || null);
             }
             else if (data.isData === "error") {
-                console.error("Error from server:", data.error);
-                alert(data.error);
-                window.location.href = "/";
+                console.error();
+                toast.error(`Error from server: ${data.error}`, {
+                    position: "top-right",
+                    autoClose: 2000,
+                    style: {
+                        fontSize: "14px",
+                    }
+                });
 
+                // Wait for 2.5 seconds before redirecting
+                setTimeout(() => {
+                    window.location.href = "/";
+                }, 2500); // 2500ms = 2.5 seconds
             } else if (data.isData === "room-join") {
-                console.log("Joined room:", data);
+
                 const index = (data.yourId || 1) - 1;
                 if (data.players[index]) {
                     data.players[index].me = 1;
@@ -90,6 +135,8 @@ export default function JoinRoom() {
                 setIsGameStarted(data.isGameStarted || false);
                 setTotalMembers(data.totalMembers);
                 setYourId(data.yourId || null);
+                setNxtAnonymousChat(data.AnonymousChat || false);
+                setNxtHideCheat(data.HideCheat || false)
             }
             else if (data.isData == "active-winner") {
                 setIsGameStarted(true);
@@ -102,12 +149,15 @@ export default function JoinRoom() {
                 setTotalMembers(data.totalMembers);
             }
             else if (data.isData === "new-user-joined") {
-                console.log("New user joined:", data);
+
                 setPlayers(data.players || []);
                 setTotalMembers(data.totalMembers);
                 setIsGameStarted(data.isGameStarted);
                 setYourId(data.yourId || null);
                 setRound(data.round);
+                setNxtAnonymousChat(data.AnonymousChat)
+                setNxtHideCheat(data.HideCheat)
+                setGlobalTotalRound(data.totalRounds)
             }
             else if (data.isData === "room-already-created") {
                 setPlayers(data.players || []);
@@ -115,14 +165,25 @@ export default function JoinRoom() {
                 setIsGameStarted(data.isGameStarted);
                 setRound(data.round);
                 setYourId(data.yourId || null);
+                setGlobalTotalRound(data.totalRounds || 3);
             }
             else if (data.isData === "room-full") {
-                console.error("Room is full:", data);
-                alert("Room is full. Please try joining another room.");
-                window.location.href = "/";
+                // console.error("Room is full:", data);
+                toast.error("Room is full. Please try joining another room.", {
+                    position: "top-center",
+                    autoClose: 2000,
+                    style: {
+                        fontSize: "14px",
+                        background: "#333",
+                        color: "#fff"
+                    }
+                });
+                setTimeout(() => {
+                    window.location.href = "/";
+                }, 2500);
             }
             else if (data.isData === "game-started") {
-                console.log("Game started:", data);
+
                 setIsGameStarted(true);
                 setYourId(data.yourId);
                 setCheats(data.cheats);
@@ -132,34 +193,43 @@ export default function JoinRoom() {
                 setPlayers(data.players);
                 setTotalMembers(data.totalMembers);
                 setWinnerList([])
+                setNxtAnonymousChat(data.AnonymousChat)
+                setNxtHideCheat(data.HideCheat)
+                setGlobalTotalRound(data.totalRounds)
             }
             else if (data.isData === "round-end") {
-                console.log("Round ended:", data);
+
                 setIsGameStarted(data.isGameStarted || false);
                 setRound(data.round || 1);
+                setPlayers(data.players)
                 setYourId(data.yourId || null);
                 setTotalMembers(data.totalMembers || 0);
                 setWinnerList(data.winnersList || []);
                 alert(data.message || "Round ended. No winner this time.");
 
+                if (data.gameOver) {
+                    //205
+                    setwinnerCelebrationWindow(true)
+                }
+
             }
             else if (data.isData === "rank-update") {
-                console.log("Winner's iddd:", data.winnerId, typeof data.winnerId);
-                console.log("Your iddd:", data.yourId, typeof data.yourId);
 
 
                 if (Number(data.winnerId) === Number(data.yourId)) {
-                    console.log
-                    alert(`Congratulations! You got Rank: ${data.rank}`);
-                   
+
+                    notify(`🎊 Congratulations 😎!\n You got Rank : 👑${data.rank} 🎉`)
+
+                    // alert();
+
                 } else {
-                    alert(data.message);
+                    notify(`🎊 ${data.message} 🎉`);
                 }
 
                 return;
             }
             else if (data.isData === "pass-cheat") {
-                console.log("Cheat passed:", data);
+
                 setCheats(data.cheats || []);
                 setActivePlayerId(data.activePlayerId || null);
                 setYourId(data.yourId || null);
@@ -168,7 +238,50 @@ export default function JoinRoom() {
                 setPickCard(data.pickCard || null);
                 setPlayers(data.players || []);
                 setTotalMembers(data.totalMembers || 0);
-                console.log("After cheat passed:", data)
+
+            }
+            else if (data.isData === "player-disconnect") {
+                console.log("Disconnect details:", data);
+                setPlayers(data.players); // Update local state
+                setTotalMembers(data.totalMembers)
+                setYourId(data.yourId)
+                setIsGameStarted(data.isGameStarted)
+
+                if (data.isGameStarted === true) {
+                    console.log("Inside The game start block")
+                    setDialogMessage(data.message);
+                    setIsOpenDialog(true);
+                    return;
+                }
+                else {
+                    console.log("Game start:", data.isGameStarted, " isOpenDialog:", isOpenDialog)
+                }
+
+                setChatSectionChat({
+                    type: "player-disconnect",
+                    message: data.message,
+                    color: "red",
+                })
+            }
+
+            else if (data.isData === "send-message") {
+                console.log(data)
+                if (data.type === "room-notification") {
+                    setChatSectionChat({
+                        type: data.type,
+                        playerId: data.playerId,
+                        message: data.message,
+                        color: "orange",
+                    })
+                } else {
+
+                    setChatSectionChat({
+                        type: data.type,
+                        username: data.type === "chat" ? data.username : "",
+                        senderid: data.type === "chat" ? data.senderId : -1,
+                        message: data.message
+                    })
+                }
             }
 
         });
@@ -182,16 +295,29 @@ export default function JoinRoom() {
 
     const startTheGame = () => {
         console.log("Starting the game...");
-        const newRound = globalRound + 1;
-        setGlobalRound(newRound); // set state
-        if (socketRef.current.readyState === WebSocket.OPEN) {
-            socketRef.current.send(JSON.stringify({
-                type: "start-game",
-                roomId: roomId,
-                round: newRound, // send the correct new value
-            }));
+        if (players.length >= 4) {
+
+            const newRound = globalRound + 1;
+            setGlobalRound(newRound); // set state
+            if (socketRef.current.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    type: "start-game",
+                    roomId: roomId,
+                    round: newRound, // send the correct new value
+                }));
+            } else {
+                console.warn("WebSocket not open yet!");
+            }
         } else {
-            console.warn("WebSocket not open yet!");
+            toast.error("Not enough players to start. Minimum 4 required.", {
+                position: "top-right",
+                autoClose: 2000,
+                style: {
+                    fontSize: "14px",
+                    background: "#333",
+                    color: "#fff"
+                }
+            });
         }
     };
 
@@ -204,10 +330,10 @@ export default function JoinRoom() {
 
 
     const cheatPassed = (passCheat, yourId, finalList) => {
-        console.log("Cheat passed:", passCheat);
+
 
         const isWinner = checkFourCheats(finalList);
-        console.log("Is winner:", isWinner);
+
 
         if (socketRef.current.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({
@@ -224,7 +350,7 @@ export default function JoinRoom() {
     };
 
     const activeUserIsWinner = (tempyourId) => {
-        console.log("Active User Id is:", yourId);
+
 
         if (socketRef.current.readyState === WebSocket.OPEN) {
             socketRef.current.send(JSON.stringify({
@@ -245,8 +371,9 @@ export default function JoinRoom() {
             event.preventDefault();
             event.returnValue = '';
             if (window.confirm("Are you sure you want to leave? Your game progress will be lost.")) {
-                alert("You have left the game. Please refresh the page to join again.");
+                window.location.href = "/"
             }
+
 
         };
 
@@ -257,35 +384,94 @@ export default function JoinRoom() {
         };
     }, []);
 
+    const sendMessage = (message, isAnonymous) => {
+        console.log("Sender id:", yourId)
+        if (socketRef.current.readyState === WebSocket.OPEN) {
+            socketRef.current.send(JSON.stringify({
+                type: "send-message",
+                roomId: roomId,
+                yourId: yourId,
+                message: message,
+                isAnonymous: isAnonymous,
+
+            }));
+        } else {
+            console.warn("WebSocket not open yet!");
+            toast.error("You are Disconnected ! Restart the Game");
+        }
+    };
+    const gameRestart = () => {
+        //200
+        setIsGameStarted(false);
+        setPickCard("No Card");
+        setWinnerList([]);
+        setGlobalRound(0);
+        setActivePlayerId(-1);
+        setCheats([]);
+        setIsOpenDialog(false);
+    }
+
     return (
-        <div className="join-room">
-            <div className="room-id">Room: {roomId}</div>
-            <div className="members-status">Members: {players.length}/{totalMembers}</div>
-            <div className="game-start">
-                {isGameStarted ? (
-                    <div>🟢online</div>
-                ) : (
-                    <div>🔴offline</div>
-                )}
-            </div>
-            <PlayGround
-                userData={details.state}
-                setallplayers={players}
-                totalMembers={totalMembers}
-                socket={socketRef.current}
-                round={round}
-                setallCheats={cheats}
-                urId={yourId}
-                activeUserIsWinner={activeUserIsWinner}
-                checkFourCheats={checkFourCheats}
-                pickCard={pickCard}
-          
-                cheatPassed={cheatPassed}
-                winnerList={winnerList}
-                activePlayerId={activePlayerId}
-                isGameStarted={isGameStarted}
-                startTheGame={startTheGame}
+        <div className="relative top-0 join-room min-h-screen w-[100vw] flex flex-col  bg-[#1e3a8a] text-white items-center justify-start gap-2 overflow-hidden">
+            <ToastContainer />
+            <WinnerCelebration
+                winnerCelebrationWindow={winnerCelebrationWindow}
+                players={players}
+                yourId={yourId}
             />
+            <AlertDialogSlide
+                setIsOpenDialog={setIsOpenDialog}
+                gameRestart={gameRestart}
+                dialogMessage={dialogMessage}
+                isOpenDialog={isOpenDialog}
+            />
+            <div className="w-[99vw] flex flex-row justify-between px-10 items-baseline mb-4">
+
+                <div className="text-2xl font-bold mb-2 ">Room: <span className="text-yellow-300">{roomId}</span></div>
+
+                <div className="text-xl bg-blue-900 px-4 py-2 rounded-xl shadow-md">
+                    Members: <span className="font-semibold text-green-300">{players.length}</span>/<span className="text-gray-200">{totalMembers}</span>
+                </div>
+
+                <div className="text-xl mt-2">
+                    {isGameStarted ? (
+                        <div className="flex items-center gap-2">
+                            <span className="text-green-400 animate-pulse">🟢 Online</span>
+                        </div>
+                    ) : (
+                        <div className="flex items-center gap-2">
+                            <span className="text-red-400 animate-pulse">🔴 Offline</span>
+                        </div>
+                    )}
+                </div>
+            </div>
+
+            <div className="w-full max-w-6xl mx-auto ">
+                <PlayGround
+                    userData={details.state}
+                    setallplayers={players}
+                    totalMembers={totalMembers}
+                    socket={socketRef.current}
+                    round={round}
+                    setallCheats={cheats}
+                    urId={yourId}
+                    activeUserIsWinner={activeUserIsWinner}
+                    checkFourCheats={checkFourCheats}
+                    pickCard={pickCard}
+                    sendMessage={sendMessage}
+                    chatSectionChat={chatSectionChat}
+                    cheatPassed={cheatPassed}
+                    winnerList={winnerList}
+                    activePlayerId={activePlayerId}
+                    isGameStarted={isGameStarted}
+                    startTheGame={startTheGame}
+                    nxtAnonymousChat={nxtAnonymousChat}
+                    nxtHideCheat={nxtHideCheat}
+                    globalTotalRound={globalTotalRound}
+
+                />
+            </div>
         </div>
+
     );
 }

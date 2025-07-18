@@ -1,7 +1,9 @@
 import React from "react";
+import {useState} from "react";
 import "./css/Home.css";
 import { useNavigate } from "react-router-dom";
 import { useEffect } from "react";
+import GameSettingsPopup from "./GameSettingsPopup";
 
 export default function Home() {
     const avatars = [
@@ -11,74 +13,83 @@ export default function Home() {
 
     const navigate = useNavigate();
 
-    const characterFaces = ["😡", "😐", "😄", "🤔", "😎"];
+    const characterFaces = [
+    "😡", "😐", "😄", "🤔", "😎",
+    "😂", "🥳", "😭", "😇", "😈", "🤩", "😜", "😅", "😏"
+];
+    const [roomId, setRoomId] = React.useState("")
     const [username, setUsername] = React.useState("");
     const [userSetEmoji, setUserSetEmoji] = React.useState("😈");
     const [currentFaceIndex, setCurrentFaceIndex] = React.useState(0);
     // const [createRoomName, setCreateRoomName] = React.useState(null);
-
+    const [showPopup, setShowPopup] = useState(false);
+    const [anonymousChat, setAnonymousChat] = useState(true);
+    const [hideCheat, setHideCheat] = useState(false);
+    const [numRounds, setNumRounds] = useState(3);
+    const [numPlayers, setNumPlayers] = useState(5);
 
     useEffect(()=>{
+        generateRoomName()
+    },[showPopup])
+
+    useEffect(() => {
         const tempname = localStorage.getItem("username")
-        if(tempname){
-           setUsername(tempname) 
+        if (tempname) {
+            setUsername(tempname)
         }
-    },[])
+    }, [])
 
     const generateRoomName = () => {
         const randomString = Math.random().toString(36).substring(2, 8);
-        console.log(randomString);
-        return `room-${randomString}`;
+        setRoomId(`room-${randomString}`)
+        // return `room-${randomString}`;
     }
 
     const createPrivateRoom = () => {
         const userData = {
             name: username,
             face: userSetEmoji,
-            totalMembers: 10,
-            type:"host",
+            totalMembers: numPlayers,
+            type: "host",
+            anonymousChat:anonymousChat,
+            hideCheat:hideCheat, 
+            numRounds:numRounds,
         };
-        localStorage.setItem("username",username)
+
+        localStorage.setItem("username", username)
         if (username === "") {
             alert("Please enter a valid username.");
             return;
         }
 
-        
-        const roomName = generateRoomName();
-        const tempMemberCount = window.prompt(`Room Name is :${roomName}\n Enter the member count (2-10):`);   
-        
-        if (tempMemberCount < 4 || tempMemberCount > 10) {
-            alert("Please enter a valid number of members (between 4 and 10).");
+        if (numPlayers < 4 || numPlayers > 15) {
+            alert("Please enter a valid number of members (between 4 and 15).");
             return;
         }
-        else{
-            
-            userData.totalMembers = tempMemberCount;
-            alert("Room created successfully! \n Room Name: " + roomName + "\n Member Count: " + tempMemberCount);
-            navigate(`${roomName}`, { state: userData });
-        }
+
+     console.log("UserDataa",userData)
+            userData.totalMembers = numPlayers;
+            navigate(`${roomId}`, { state: userData });
+        
     }
 
     const joinPrivateRoom = () => {
         const userData = {
             name: username,
             face: userSetEmoji,
-            type:"member",
+            type: "member",
         };
-        localStorage.setItem("username",username)
-         if (username === "") {
+        localStorage.setItem("username", username)
+        if (username === "") {
             alert("Please enter a valid username.");
             return;
         }
         const joinRoomName = window.prompt("Enter the room name you want to join:");
 
-
-
-        if ((!(joinRoomName===null))) {
-        navigate(`${joinRoomName}`, { state: userData });
+        if ((!(joinRoomName === null))) {
+            navigate(`${joinRoomName}`, { state: userData });
         }
-          
+
         else {
             alert("Please enter a valid room name and username.");
         }
@@ -88,7 +99,22 @@ export default function Home() {
     return (
         <div className="home-container">
             {/* <div className="home-background"></div> */}
-
+            <GameSettingsPopup
+                showPopup={showPopup}
+                roomId={roomId}
+                createPrivateRoom={createPrivateRoom}
+                anonymousChat={anonymousChat}
+                hideCheat={hideCheat}
+                generateRoomName={generateRoomName}
+                numRounds={numRounds}
+                numPlayers={numPlayers}
+                
+                setShowPopup={setShowPopup}
+                setAnonymousChat={setAnonymousChat}
+                setHideCheat={setHideCheat}
+                setNumRounds={setNumRounds}
+                setNumPlayers={setNumPlayers}
+            />
             {/* Header */}
             <div className="home-header">
                 <h1 className="home-logo">
@@ -120,7 +146,7 @@ export default function Home() {
                     value={username}
                     onChange={(e) => setUsername(e.target.value)}
                     placeholder="Enter your name"
-                    className="input-name"
+                    className="input-name text-center"
                 />
 
                 <div className="character-wrapper">
@@ -150,7 +176,7 @@ export default function Home() {
 
                 <div className="buttons-wrapper">
                     {/* <div className="custom-button play-button">Play!</div> */}
-                    <div className="custom-button create-button" onClick={createPrivateRoom}>Create Private Room</div>
+                    <div className="custom-button create-button" onClick={()=>{setShowPopup(true)}}>Create Private Room</div>
                     <div className="custom-button join-button" onClick={joinPrivateRoom}>Join Private Room</div>
                 </div>
             </div>

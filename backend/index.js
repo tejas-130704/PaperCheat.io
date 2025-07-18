@@ -53,7 +53,7 @@ wss.on("connection", (ws) => {
                                 isData: "rank-update",
                                 winnerId: userData.yourId,
                                 rank: 1,
-                                yourId:p.id,
+                                yourId: p.id,
                                 message: `${room.players[userData.yourId - 1].name} got Rank : ${1}!`,
                             }));
                         }
@@ -69,7 +69,7 @@ wss.on("connection", (ws) => {
                                 isData: "rank-update",
                                 winnerId: userData.yourId,
                                 rank: 2,
-                                yourId:p.id,
+                                yourId: p.id,
                                 message: `${room.players[userData.yourId - 1].name} got Rank : ${2}!`,
                             }));
                         }
@@ -85,7 +85,7 @@ wss.on("connection", (ws) => {
                                 isData: "rank-update",
                                 winnerId: userData.yourId,
                                 rank: 3,
-                                yourId : p.id,
+                                yourId: p.id,
                                 message: `${room.players[userData.yourId - 1].name} got Rank : ${3}!`,
                             }));
                         }
@@ -98,10 +98,11 @@ wss.on("connection", (ws) => {
 
                             const payload = {
                                 isData: "round-end",
-                                message: "Game Over! Already",
+                                message: "Game Over!",
                                 isGameStarted: false,
                                 players: room.players,
                                 round: room.round,
+                                gameOver: room.round === room.totalRounds ? true : false,
                                 totalMembers: room.totalMembers,
                                 yourId: userData.yourId,
                                 roomId: userData.roomId,
@@ -118,35 +119,7 @@ wss.on("connection", (ws) => {
                         }
                     });
                 }
-                // else {
-                //     room.isGameStarted = false;
-                //     room.round = 1;
-                //     room.sockets.forEach(client => {
-                //         if (client.readyState === WebSocket.OPEN) {
-                //             const p = room.players.find(p => p.socketid === client.id);
-
-                //             const payload = {
-                //                 isData: "round-end",
-                //                 message: "Game Over! Already",
-                //                 isGameStarted: false,
-                //                 players: room.players,
-                //                 round: room.round,
-                //                 totalMembers: room.totalMembers,
-                //                 yourId: userData.yourId,
-                //                 roomId: userData.roomId,
-                //                 winnersList: room.players.filter(p => (p.rank <= 3) && (p.rank >= 1)).map(p => ({
-                //                     name: p.name,
-                //                     points: p.points,
-                //                     rank: p.rank
-                //                 }))
-
-                //             }
-                //             console.log(`${client.id} sends to : ${payload}`)
-                //             client.send(JSON.stringify(payload));
-                //         }
-                //     });
-
-                // }
+                
             }
 
             function getRandomCheat(cheatPool) {
@@ -175,10 +148,15 @@ wss.on("connection", (ws) => {
                     sockets: [],
                     round: 1,
                     isGameStarted: false,
-                    totalMembers: userData.memberCount || 10
+                    AnonymousChat: userData.nxtAnonymousChat,
+                    HideCheat: userData.nxtHideCheat,
+                    totalMembers: userData.memeberCount,
+                    totalRounds: userData.totalRounds,
                 });
 
+                
                 const room = Rooms.get(userData.roomId);
+                console.log("Rooom Created:",room)
 
                 room.players.push({
                     id: room.players.length + 1,
@@ -201,6 +179,17 @@ wss.on("connection", (ws) => {
                     roomId: userData.roomId,
                     yourId: room.players.length
                 }));
+
+                room.sockets.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                            isData: "send-message",
+                            playerId: 1,
+                            type: "room-notification",
+                            message: `You have created the room`
+                        }));
+                    }
+                });
 
             } else if (userData.type === "room-join") {
                 if (!Rooms.has(userData.roomId)) {
@@ -239,7 +228,10 @@ wss.on("connection", (ws) => {
                     totalMembers: room.totalMembers,
                     isGameStarted: room.isGameStarted,
                     round: room.round,
-                    yourId: room.players.length
+                    yourId: room.players.length,
+                    AnonymousChat: room.AnonymousChat,
+                    HideCheat: room.HideCheat,
+                    totalRounds: room.totalRounds,
                 }));
 
                 room.sockets.forEach(client => {
@@ -252,10 +244,29 @@ wss.on("connection", (ws) => {
                             totalMembers: room.totalMembers,
                             isGameStarted: room.isGameStarted,
                             round: room.round,
-                            yourId: player?.id
+                            yourId: player?.id,
+                            AnonymousChat: room.AnonymousChat,
+                            HideCheat: room.HideCheat,
+                            totalRounds: room.totalRounds,
                         }));
                     }
                 });
+
+                room.sockets.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        const player = room.players.find(p => p.socketid === client.id);
+
+                        if (player) {
+                            client.send(JSON.stringify({
+                                isData: "send-message",
+                                type: "room-notification",
+                                playerId: room.players.length + 1, // use the correct identifier
+                                message: `${userData.userName} has joined the room`
+                            }));
+                        }
+                    }
+                });
+
             }
             else if (userData.type === "start-game") {
                 const room = Rooms.get(userData.roomId);
@@ -276,10 +287,10 @@ wss.on("connection", (ws) => {
                     }));
                     return;
                 }
-                
+
                 for (i = 0; i < room.players.length; i++) {
                     room.players[i].rank = -1; //while starting new round rank will be calculated again
-                    room.players[i].active="";
+                    room.players[i].active = "";
                 }
                 room.cheats = {}
 
@@ -345,10 +356,25 @@ wss.on("connection", (ws) => {
                             isGameStarted: room.isGameStarted,
                             round: room.round,
                             yourId: p?.id,
-                            startingPlayerId: activePlayer.id
+                            startingPlayerId: activePlayer.id,
+                            AnonymousChat: room.AnonymousChat,
+                            HideCheat: room.HideCheat,
+                            totalRounds: room.totalRounds,
                         };
 
+                        console.log("Game start payload",payload)
+
                         client.send(JSON.stringify(payload));
+                    }
+                });
+                const name = room.players[activePlayer.id - 1].name
+                room.sockets.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                            isData: "send-message",
+                            type: "notification",
+                            message: `${name} have the cheat`
+                        }));
                     }
                 });
             }
@@ -405,6 +431,17 @@ wss.on("connection", (ws) => {
                     }
                 });
 
+                const name = room.players[sureNextPlayerId - 1].name
+                room.sockets.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                            isData: "send-message",
+                            type: "notification",
+                            message: `${name} have the cheat`
+                        }));
+                    }
+                });
+
 
 
             }
@@ -423,7 +460,7 @@ wss.on("connection", (ws) => {
                 }
 
                 getTheWinnerAndRank(room, userData)
-                
+
                 // ✅ Step 1: Find the next player with rank -1
                 let nextIndex = yourId - 1; // Convert to 0-based index
                 for (let i = 1; i <= room.players.length; i++) {
@@ -472,7 +509,29 @@ wss.on("connection", (ws) => {
 
                     }
                 });
-                
+
+            }
+            
+            else if (userData.type === "send-message") {
+                const room = Rooms.get(userData.roomId);
+                if (!room) {
+                    ws.send(JSON.stringify({ error: "Room does not exist", isData: "error" }));
+                    return;
+                }
+
+                const player = room.players[userData.yourId - 1]
+
+                room.sockets.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                            isData: "send-message",
+                            username: userData.isAnonymous ?  "Anonymous" : player.name ,
+                            type: "chat",
+                            senderId: userData.isAnonymous ? -1 :userData.yourId,
+                            message: userData.message
+                        }));
+                    }
+                });
             }
 
 
@@ -485,11 +544,54 @@ wss.on("connection", (ws) => {
     ws.on("close", () => {
         console.log("Client disconnected", ws.id);
         userSocketMap.delete(ws.id);
+
         for (const [roomId, room] of Rooms.entries()) {
+            // Check if this socket was in the room
+            const wasInRoom = room.sockets.includes(ws);
+
+            const player = room.players.find(p => p.socketid === ws.id);
+            const playerName = player ? player.name : "Unknown Player";
+
+            if (room.players.length === 0) {
+                Rooms.delete(roomId);
+                console.log(`Room ${roomId} deleted because it's empty.`);
+            }
+
+            // Remove the user from the room
             room.sockets = room.sockets.filter(s => s !== ws);
             room.players = room.players.filter(p => p.socketid !== ws.id);
+
+            console.log("room left player details: ", playerName)
+
+
+
+            for (let i = 0; i < room.players.length; i++) {
+                room.players[i].id = i + 1;
+            }
+
+            
+
+
+            // ✅ Notify other users in this room
+            if (wasInRoom) {
+                room.sockets.forEach(otherSocket => {
+                    const p = room.players.find((p) => p.socketid === otherSocket.id)
+                    console.log("Disconnect message and update ids: ", p)
+                    if (otherSocket.readyState === WebSocket.OPEN) {
+                        otherSocket.send(JSON.stringify({
+                            isData: "player-disconnect",
+                            players: room.players,
+                            yourId: p.id,
+                            message: `${playerName} has left the room.`,
+                            totalMembers: room.totalMembers,
+                            isGameStarted: room.isGameStarted,
+                        }));
+                    }
+                });
+            }
         }
     });
+
 });
 
 app.get("/", (req, res) => {
