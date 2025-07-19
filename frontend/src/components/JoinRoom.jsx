@@ -10,7 +10,7 @@ export default function JoinRoom() {
     const details = useLocation();
 
     if (!details.state) {
-        window.location.href = "/";
+        window.location.href = "/PaperCheatIO/";
         return null;
     }
 
@@ -121,7 +121,7 @@ export default function JoinRoom() {
 
                 // Wait for 2.5 seconds before redirecting
                 setTimeout(() => {
-                    window.location.href = "/";
+                    window.location.href = "/PaperCheatIO/";
                 }, 2500); // 2500ms = 2.5 seconds
             } else if (data.isData === "room-join") {
 
@@ -179,7 +179,7 @@ export default function JoinRoom() {
                     }
                 });
                 setTimeout(() => {
-                    window.location.href = "/";
+                    window.location.href = "/PaperCheatIO/";
                 }, 2500);
             }
             else if (data.isData === "game-started") {
@@ -371,7 +371,7 @@ export default function JoinRoom() {
             event.preventDefault();
             event.returnValue = '';
             if (window.confirm("Are you sure you want to leave? Your game progress will be lost.")) {
-                window.location.href = "/"
+                window.location.href = "/PaperCheatIO/"
             }
 
 

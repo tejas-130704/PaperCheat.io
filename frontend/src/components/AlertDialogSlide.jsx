@@ -21,7 +21,7 @@ export default function AlertDialogSlide({ isOpenDialog, setIsOpenDialog, gameRe
   const handleGameLeave = () => {
     setOpen(false);
     setIsOpenDialog(false);
-    window.location.href = "/";
+    window.location.href = "/PaperCheatIO/";
   };
 
   return (
