@@ -41,5 +41,6 @@
   "main": "eslint.config.js",
   "keywords": [],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "homepage": "https://tejas-130704.github.io/PaperCheatIO/"
 }
