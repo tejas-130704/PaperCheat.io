@@ -48,7 +48,7 @@ export default function JoinRoom() {
     }, [])
 
     useEffect(() => {
-        socketRef.current = new WebSocket('ws://b56abca24cfa.ngrok-free.app');
+        socketRef.current = new WebSocket('wss://b56abca24cfa.ngrok-free.app');
 
         socketRef.current.addEventListener('open', () => {
 
