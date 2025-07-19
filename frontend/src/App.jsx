@@ -17,12 +17,12 @@ function App() {
   }
 
   return (
-    <Router>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/:roomId" element={<JoinRoom />} />
-      </Routes>
-    </Router>
+
+    <Routes>
+      <Route path="/" element={<Home />} />
+      <Route path="/:roomId" element={<JoinRoom />} />
+    </Routes>
+
   );
 }
 
