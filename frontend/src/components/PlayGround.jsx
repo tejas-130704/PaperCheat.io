@@ -158,7 +158,7 @@ function PlayGround({ setallplayers, round, isGameStarted, urId, totalMembers, s
                     <div className="round-number text-[15px] text-gray-300">Round: {roundNumber} of {globalTotalRound}</div>
                     <div
                         className="exit-room text-white bg-red-600 hover:bg-red-700 rounded-full px-3 py-1 cursor-pointer text-xl"
-                        onClick={() => window.location.href = '/'}
+                        onClick={() => window.location.href = '/PaperCheatIO/'}
                     >
                         ❌
                     </div>
