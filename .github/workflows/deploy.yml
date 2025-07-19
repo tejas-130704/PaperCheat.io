@@ -3,7 +3,11 @@ name: Deploy Vite App from frontend/ to GitHub Pages
 on:
   push:
     branches:
-      - main  # ✅ using main branch, not gh-pages
+      - main
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -33,7 +37,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: frontend/dist  # ✅ path to built Vite app
+          path: frontend/dist
 
   deploy:
     needs: build
